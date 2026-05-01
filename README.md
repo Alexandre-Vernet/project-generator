@@ -54,6 +54,14 @@ Avec un dossier personnalise:
 python generator.py --project-name my-project --output-dir "C:\Users\JohnDoe\Downloads\mes-projets\my-project"
 ```
 
+Options utiles:
+
+- `--dry-run`: simulation complete (pas d'ecriture locale/DB/VPS)
+- `--skip-vps`: ne fait pas l'upload VPS
+- `--skip-db`: ne fait pas l'insertion DB
+- `--only-files`: genere uniquement les fichiers (`--skip-vps --skip-db`)
+- `--check`: verifie la connectivite DB/VPS puis quitte
+
 ## Ce que fait le script
 
 1. Verifie que le projet n'existe pas deja dans `public.projects`
@@ -77,6 +85,20 @@ python generator.py --project-name my-project --output-dir "C:\Users\JohnDoe\Dow
    - URLs a creer
    - IP de redirection (`TARGET_HOST`)
    - liens OVH + Nginx Proxy Manager
+
+## Exemples rapides
+
+Verification de config:
+
+```bash
+python generator.py --project-name my-project --check
+```
+
+Generation fichiers uniquement:
+
+```bash
+python generator.py --project-name my-project --only-files
+```
 
 ## Generation des sources applicatives (manuel)
 

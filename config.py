@@ -40,3 +40,12 @@ def get_frontend_url(project_name: str, trailing_slash: bool = True) -> str:
 def get_api_url(project_name: str, trailing_slash: bool = True) -> str:
     suffix = "/" if trailing_slash else ""
     return f"https://{project_name}-api.{get_base_domain()}{suffix}"
+
+
+def validate_runtime_config() -> None:
+    target_host = read_env("TARGET_HOST", required=True).strip()
+    base_domain = get_base_domain().strip()
+    if not target_host:
+        raise RuntimeError("TARGET_HOST est vide.")
+    if any(ch.isspace() for ch in base_domain) or "/" in base_domain:
+        raise RuntimeError("BASE_DOMAIN invalide (pas d'espaces ni de slash).")

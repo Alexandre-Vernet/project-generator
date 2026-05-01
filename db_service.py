@@ -3,6 +3,12 @@ import psycopg2
 from config import get_api_url, get_frontend_url, read_env
 from models import Ports
 
+TABLE = "projects"
+C_NAME = "name"
+C_URL = "url"
+C_HTTP = "http_port"
+C_HTTPS = "https_port"
+
 
 def db_connection():
     target_host = read_env("TARGET_HOST", required=True)
@@ -16,19 +22,15 @@ def db_connection():
 
 
 def find_next_ports(conn) -> Ports:
-    table = read_env("PM_TABLE", "projects")
-    c_http = read_env("PM_COLUMN_HTTP_PORT", "http_port")
-    c_https = read_env("PM_COLUMN_HTTPS_PORT", "https_port")
-
     sql = f"""
         SELECT
-            COALESCE(MAX({c_http}) FILTER (WHERE {c_http} BETWEEN 3000 AND 3999), 3006) AS max_front_http,
-            COALESCE(MAX({c_https}) FILTER (WHERE {c_https} BETWEEN 3000 AND 3999), 3007) AS max_front_https,
-            COALESCE(MAX({c_http}) FILTER (WHERE {c_http} BETWEEN 4000 AND 4999), 4006) AS max_api_http,
-            COALESCE(MAX({c_https}) FILTER (WHERE {c_https} BETWEEN 4000 AND 4999), 4007) AS max_api_https,
-            COALESCE(MAX({c_http}) FILTER (WHERE {c_http} BETWEEN 5000 AND 5999), 5007) AS max_db_http,
-            COALESCE(MAX({c_https}) FILTER (WHERE {c_https} BETWEEN 5000 AND 5999), 5008) AS max_db_https
-        FROM public.{table}
+            COALESCE(MAX({C_HTTP}) FILTER (WHERE {C_HTTP} BETWEEN 3000 AND 3999), 3006) AS max_front_http,
+            COALESCE(MAX({C_HTTPS}) FILTER (WHERE {C_HTTPS} BETWEEN 3000 AND 3999), 3007) AS max_front_https,
+            COALESCE(MAX({C_HTTP}) FILTER (WHERE {C_HTTP} BETWEEN 4000 AND 4999), 4006) AS max_api_http,
+            COALESCE(MAX({C_HTTPS}) FILTER (WHERE {C_HTTPS} BETWEEN 4000 AND 4999), 4007) AS max_api_https,
+            COALESCE(MAX({C_HTTP}) FILTER (WHERE {C_HTTP} BETWEEN 5000 AND 5999), 5007) AS max_db_http,
+            COALESCE(MAX({C_HTTPS}) FILTER (WHERE {C_HTTPS} BETWEEN 5000 AND 5999), 5008) AS max_db_https
+        FROM public.{TABLE}
     """
     with conn.cursor() as cur:
         cur.execute(sql)
@@ -45,17 +47,14 @@ def find_next_ports(conn) -> Ports:
 
 
 def ensure_project_not_exists(conn, project_name: str) -> None:
-    table = read_env("PM_TABLE", "projects")
-    c_name = read_env("PM_COLUMN_NAME", "name")
-    c_url = read_env("PM_COLUMN_URL", "url")
     front_url = get_frontend_url(project_name, trailing_slash=True)
     api_url = get_api_url(project_name, trailing_slash=True)
 
     sql = f"""
         SELECT 1
-        FROM public.{table}
-        WHERE {c_name} IN (%s, %s, %s)
-           OR {c_url} IN (%s, %s)
+        FROM public.{TABLE}
+        WHERE {C_NAME} IN (%s, %s, %s)
+           OR {C_URL} IN (%s, %s)
         LIMIT 1
     """
     with conn.cursor() as cur:
@@ -76,15 +75,9 @@ def ensure_project_not_exists(conn, project_name: str) -> None:
 
 
 def insert_project_record(conn, project_name: str, ports: Ports) -> None:
-    table = read_env("PM_TABLE", "projects")
-    c_name = read_env("PM_COLUMN_NAME", "name")
-    c_url = read_env("PM_COLUMN_URL", "url")
-    c_http = read_env("PM_COLUMN_HTTP_PORT", "http_port")
-    c_https = read_env("PM_COLUMN_HTTPS_PORT", "https_port")
-
     sql = f"""
-        INSERT INTO public.{table}
-            ({c_name}, {c_url}, {c_http}, {c_https})
+        INSERT INTO public.{TABLE}
+            ({C_NAME}, {C_URL}, {C_HTTP}, {C_HTTPS})
         VALUES (%s, %s, %s, %s)
     """
     front_url = get_frontend_url(project_name, trailing_slash=True)
@@ -98,3 +91,9 @@ def insert_project_record(conn, project_name: str, ports: Ports) -> None:
         for row in rows:
             cur.execute(sql, row)
     conn.commit()
+
+
+def check_db_health() -> None:
+    with db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")

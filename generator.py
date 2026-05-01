@@ -4,7 +4,15 @@ from pathlib import Path
 
 import paramiko
 import psycopg2
-from config import get_api_url, get_base_domain, get_frontend_url, load_environment, read_env, slugify_project_name
+from config import (
+    get_api_url,
+    get_base_domain,
+    get_frontend_url,
+    load_environment,
+    read_env,
+    slugify_project_name,
+    validate_runtime_config,
+)
 from db_service import db_connection, ensure_project_not_exists, find_next_ports, insert_project_record
 from filesystem_service import create_angular_nginx_conf, write_file
 from templates import (
@@ -14,6 +22,10 @@ from templates import (
     render_github_actions_workflow,
 )
 from vps import upload_compose_to_vps
+
+
+def log_step(message: str) -> None:
+    print(f"[STEP] {message}")
 
 
 def main() -> None:
@@ -27,21 +39,22 @@ def main() -> None:
         default="",
         help="Dossier de generation. Par defaut: ~/Downloads/<project-name>",
     )
-
     args = parser.parse_args()
 
+    validate_runtime_config()
     project_name = slugify_project_name(args.project_name)
     output_root = Path(args.output_dir).expanduser() if args.output_dir else (Path.home() / "Downloads" / project_name)
-    output_root.mkdir(parents=True, exist_ok=True)
     front_dir_name = f"{project_name}-app"
     back_dir_name = f"{project_name}-api"
 
     try:
+        log_step("Connexion DB et reservation ports")
         with db_connection() as conn:
             ensure_project_not_exists(conn, project_name)
             ports = find_next_ports(conn)
 
-           
+            log_step("Generation fichiers projet")
+            output_root.mkdir(parents=True, exist_ok=True)
             (output_root / front_dir_name).mkdir(exist_ok=True)
             (output_root / back_dir_name).mkdir(exist_ok=True)
             create_angular_nginx_conf(output_root / front_dir_name)
@@ -60,7 +73,10 @@ def main() -> None:
             workflow_path = output_root / ".github" / "workflows" / "docker-build-deploy.yml"
             write_file(workflow_path, render_github_actions_workflow(project_name))
 
+            log_step("Upload docker-compose sur VPS")
             upload_compose_to_vps(project_name, compose_path)
+
+            log_step("Insertion des enregistrements en base")
             insert_project_record(conn, project_name, ports)
     except RuntimeError as exc:
         print(f"Erreur de configuration: {exc}")
@@ -93,7 +109,7 @@ def main() -> None:
     print("3) Generer les sources applicatives")
     print(f"   - Angular: ng new {front_dir_name} --routing --style=scss --skip-git")
     print("   - Spring Initializr:")
-    print(f"     https://start.spring.io/#!type=maven-project&language=java&groupId=com.avernet&artifactId={back_dir_name}&name={back_dir_name}&packageName=com.example.{back_dir_name.replace('-', '')}&packaging=jar&javaVersion=17&dependencies=web,data-jpa,postgresql,flyway,lombok,validation,security, testcontainers")
+    print(f"     https://start.spring.io/#!type=maven-project&language=java&groupId=com.avernet&artifactId={back_dir_name}&name={back_dir_name}&packageName=com.example.{back_dir_name.replace('-', '')}&packaging=jar&javaVersion=17&dependencies=web,data-jpa,postgresql,flyway,lombok,validation,security,testcontainers")
 
 
 if __name__ == "__main__":
