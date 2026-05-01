@@ -14,7 +14,6 @@ Automatise la creation d'un nouveau projet avec:
 - Python 3.10+
 - Acces PostgreSQL a la base `project-manager`
 - Acces SSH au VPS OVH
-- (Optionnel) Angular CLI et Java/Maven pour generer les sources applicatives
 
 ## Installation
 
@@ -54,13 +53,12 @@ Avec un dossier personnalise:
 python generator.py --project-name my-project --output-dir "C:\Users\JohnDoe\Downloads\mes-projets\my-project"
 ```
 
-Options utiles:
+Avec le script Windows (`.bat`):
 
-- `--dry-run`: simulation complete (pas d'ecriture locale/DB/VPS)
-- `--skip-vps`: ne fait pas l'upload VPS
-- `--skip-db`: ne fait pas l'insertion DB
-- `--only-files`: genere uniquement les fichiers (`--skip-vps --skip-db`)
-- `--check`: verifie la connectivite DB/VPS puis quitte
+```bat
+create_project.bat
+```
+
 
 ## Ce que fait le script
 
@@ -86,21 +84,7 @@ Options utiles:
    - IP de redirection (`TARGET_HOST`)
    - liens OVH + Nginx Proxy Manager
 
-## Exemples rapides
-
-Verification de config:
-
-```bash
-python generator.py --project-name my-project --check
-```
-
-Generation fichiers uniquement:
-
-```bash
-python generator.py --project-name my-project --only-files
-```
-
-## Generation des sources applicatives (manuel)
+## Generation des sources applicatives
 
 Angular:
 
