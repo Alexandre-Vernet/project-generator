@@ -1,19 +1,21 @@
 # Project Generator
 
-Automatise la creation d'un nouveau projet avec:
+<a href="README-fr.md">fr</a>
 
-- Dockerfile Angular
-- Dockerfile Spring Boot
-- `docker-compose.yml`
-- Copie du compose sur le VPS
-- Allocation automatique des ports depuis la base `project-manager`
-- Insertion des 3 services (`app`, `api`, `db`) dans `public.projects`
+Automates the creation of a new project with:
 
-## Prerequis
+- Angular Dockerfile  
+- Spring Boot Dockerfile  
+- `docker-compose.yml`  
+- Copy of the compose file to the VPS  
+- Automatic port allocation from the `project-manager` database  
+- Insertion of the 3 services (`app`, `api`, `db`) into `public.projects`  
 
-- Python 3.10+
-- Acces PostgreSQL a la base `project-manager`
-- Acces SSH au VPS OVH
+## Prerequisites
+
+- Python 3.10+  
+- PostgreSQL access to the `project-manager` database  
+- SSH access to the OVH VPS  
 
 ## Installation
 
@@ -25,66 +27,65 @@ python -m pip install -r requirements.txt
 
 ## Configuration
 
-Copier le fichier d'exemple:
+Copy the example file:
 
 ```bash
 copy .env.example .env
 ```
 
-Variables principales:
+Main variables:
 
-- `TARGET_HOST`: host commun pour PostgreSQL + SSH VPS (obligatoire)
-- `BASE_DOMAIN`: domaine racine (ex: `alexandre-vernet.fr`)
-- `PM_DB_PORT`, `PM_DB_NAME`, `PM_DB_USER`, `PM_DB_PASSWORD`
-- `SSH_PORT`, `SSH_USER`, `SSH_PASSWORD` ou `SSH_KEY_PATH`
-- `SSH_BASE_DIR` (par defaut `/home/debian/apps`)
+- `TARGET_HOST`: common host for PostgreSQL + VPS SSH (required)  
+- `BASE_DOMAIN`: root domain (e.g., `alexandre-vernet.fr`)  
+- `PM_DB_PORT`, `PM_DB_NAME`, `PM_DB_USER`, `PM_DB_PASSWORD`  
+- `SSH_PORT`, `SSH_USER`, `SSH_PASSWORD` or `SSH_KEY_PATH`  
+- `SSH_BASE_DIR` (default: `/home/debian/apps`)  
 
-## Lancer la generation
+## Run the generator
 
-Par defaut, les fichiers sont generes dans `~/Downloads/<project-name>`:
+By default, files are generated in `~/Downloads/<project-name>`:
 
 ```bash
 python generator.py --project-name my-project
 ```
 
-Avec un dossier personnalise:
+With a custom directory:
 
 ```bash
-python generator.py --project-name my-project --output-dir "C:\Users\JohnDoe\Downloads\mes-projets\my-project"
+python generator.py --project-name my-project --output-dir "C:\Users\JohnDoe\Downloads\my-projects\my-project"
 ```
 
-Avec le script Windows (`.bat`):
+With the Windows script (`.bat`):
 
 ```bat
 create_project.bat
 ```
 
+## What the script does
 
-## Ce que fait le script
-
-1. Verifie que le projet n'existe pas deja dans `public.projects`
-2. Calcule les prochains ports disponibles par tranche:
-   - Front: `3000-3999`
+1. Checks that the project does not already exist in `public.projects`  
+2. Calculates the next available ports by range:
+   - Frontend: `3000-3999`
    - API: `4000-4999`
    - DB: `5000-5999`
-3. Genere:
+3. Generates:
    - `<project>-app/Dockerfile`
    - `<project>-app/nginx.conf`
    - `<project>-api/Dockerfile`
    - `docker-compose.yml`
    - `.github/workflows/docker-build-deploy.yml`
-4. Cree `/home/debian/apps/<project>` sur le VPS et y copie le compose
-5. Insere dans `public.projects`:
-   - `<project>-app` avec URL `https://<project>.<BASE_DOMAIN>/`
-   - `<project>-api` avec URL `https://<project>-api.<BASE_DOMAIN>/`
-   - `<project>-db` avec URL `NULL`
-6. Affiche un recap avec:
-   - ports alloues
-   - URLs a creer
-   - IP de redirection (`TARGET_HOST`)
-   - liens OVH + Nginx Proxy Manager
+4. Creates `/home/debian/apps/<project>` on the VPS and copies the compose file there  
+5. Inserts into `public.projects`:
+   - `<project>-app` with URL `https://<project>.<BASE_DOMAIN>/`
+   - `<project>-api` with URL `https://<project>-api.<BASE_DOMAIN>/`
+   - `<project>-db` with URL `NULL`
+6. Displays a summary with:
+   - allocated ports  
+   - URLs to create  
+   - redirection IP (`TARGET_HOST`)  
+   - OVH + Nginx Proxy Manager links  
 
-## Generation des sources applicatives
+## Application source generation
 
 Angular:
 
