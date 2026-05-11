@@ -112,7 +112,7 @@ networks:
 """
 
 
-def render_github_actions_workflow(project_name: str) -> str:
+def render_github_actions_workflow_build_deploy(project_name: str) -> str:
     app_name = f"{project_name}-app"
     api_name = f"{project_name}-api"
     repo_name = project_name
@@ -132,30 +132,9 @@ env:
     SERVER_USERNAME: ${{{{ secrets.SERVER_USERNAME }}}}
     SERVER_PASSWORD: ${{{{ secrets.SERVER_PASSWORD }}}}
     SERVER_PORT: ${{{{ secrets.SERVER_PORT }}}}
-    KEYSTORE_BASE64: ${{{{ secrets.KEYSTORE_BASE64 }}}}
-    KEY_STORE_PASSWORD: ${{{{ secrets.KEY_STORE_PASSWORD }}}}
-    KEY_ALIAS: ${{{{ secrets.KEY_ALIAS }}}}
-    KEY_PASSWORD: ${{{{ secrets.KEY_PASSWORD }}}}
 
 jobs:
-    tests:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Set up Java
-              uses: actions/setup-java@v4
-              with:
-                  distribution: temurin
-                  java-version: 17
-
-            - name: Run tests
-              run: mvn clean test
-              working-directory: {api_name}
-
     build-push-images:
-        needs: tests
         runs-on: ubuntu-latest
         environment: production
         steps:
@@ -212,4 +191,33 @@ jobs:
                       docker system prune -f
                       cd /home/debian/apps/${{{{ env.DOCKERHUB_REPOSITORY_NAME }}}}/
                       docker-compose up -d
+"""
+
+
+def render_github_actions_workflow_tests(project_name: str) -> str:
+    api_name = f"{project_name}-api"
+    return f"""name: Run test
+
+on:
+    push:
+        branches: 
+            - "**"
+    pull_request: 
+
+jobs:
+    tests:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: 17
+
+            - name: Run tests
+              run: mvn clean test
+              working-directory: {api_name}
 """

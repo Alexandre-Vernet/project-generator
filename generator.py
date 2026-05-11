@@ -19,7 +19,8 @@ from templates import (
     BACK_DOCKERFILE_TEMPLATE,
     FRONT_DOCKERFILE_TEMPLATE,
     render_compose,
-    render_github_actions_workflow,
+    render_github_actions_workflow_build_deploy,
+    render_github_actions_workflow_tests
 )
 from vps import upload_compose_to_vps
 
@@ -70,8 +71,10 @@ def main() -> None:
             compose = render_compose(project_name, ports)
             compose_path = output_root / "docker-compose.yml"
             write_file(compose_path, compose)
-            workflow_path = output_root / ".github" / "workflows" / "docker-build-deploy.yml"
-            write_file(workflow_path, render_github_actions_workflow(project_name))
+            workflow_build_deploy = output_root / ".github" / "workflows" / "docker-build-deploy.yml"
+            write_file(workflow_build_deploy, render_github_actions_workflow_build_deploy(project_name))
+            workflow_test = output_root / ".github" / "workflows" / "tests.yml"
+            write_file(workflow_test, render_github_actions_workflow_tests(project_name))
 
             log_step("Upload docker-compose sur VPS")
             upload_compose_to_vps(project_name, compose_path)
